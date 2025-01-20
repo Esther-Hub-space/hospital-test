@@ -1,1 +1,247 @@
-ECHO is on.
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Web App API Test</title>
+    <style>
+        body {
+            font-family: 'Helvetica', sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(to right, #e3fdfd, #cbf1f5, #a6e3e9, #71c9ce);
+            color: #333;
+        }
+
+        h1 {
+            background: linear-gradient(to right, #004080, #0059b3);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 20px;
+            animation: slide-in-down 1s ease-out;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        h2 {
+            margin: 20px 0;
+            color: #004080;
+            animation: fade-in 1s ease-in;
+            text-shadow: 1px 1px #72c3dc;
+            text-align: center;
+        }
+
+        form {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            transition: transform 0.3s ease;
+            overflow: hidden;
+        }
+
+        form:hover {
+            transform: scale(1.02);
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #004080;
+        }
+
+        input[type="text"],
+        input[type="date"],
+        input[type="time"],
+        input[type="file"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: box-shadow 0.2s;
+        }
+
+        input[type="text"]:focus,
+        input[type="date"]:focus,
+        input[type="time"]:focus,
+        input[type="file"]:focus {
+            box-shadow: 0 0 8px rgba(0, 64, 128, 0.6);
+            outline: none;
+        }
+
+        button {
+            background-color: #007acc;
+            color: white;
+            padding: 10px 25px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s, transform 0.2s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        button:hover {
+            background-color: #0059b3;
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        button:active {
+            transform: translateY(2px);
+            background-color: #004080;
+        }
+
+        .response-container {
+            margin-top: 20px;
+            padding: 20px;
+            background-color: #cce6ff;
+            border: 1px solid #004080;
+            border-radius: 8px;
+            color: #004080;
+            opacity: 0;
+            animation: fade-in 1s forwards;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        @keyframes fade-in {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slide-in-down {
+            from { transform: translateY(-100%); }
+            to { transform: translateY(0); }
+        }
+
+        .form-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: space-between;
+        }
+
+        .form-container > form {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        @media (max-width: 768px) {
+            .form-container {
+                flex-direction: column;
+            }
+        }
+    </style>
+    <script>
+        // Function to book an appointment
+        function bookAppointment() {
+            const patientId = document.getElementById("patientId").value;
+            const doctorId = document.getElementById("doctorId").value;
+            const date = document.getElementById("date").value;
+            const time = document.getElementById("time").value;
+            const reason = document.getElementById("reason").value;
+
+            console.log("Request Data:", { patientId, doctorId, date, time, reason });
+
+            fetch('http://127.0.0.1:8000/core/appointment/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ patient: patientId, doctor: doctorId, date, time, reason })
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("appointmentResponse").innerHTML = data.appointmentID 
+                    ? `Appointment booked successfully! Appointment ID: ${data.appointmentID}. <br>
+                        Meeting Link: <a href="${data.meeting_link}" target="_blank">${data.meeting_link}</a>` 
+                    : `Error: ${data.error}`;
+            })
+            .catch(error => {
+                document.getElementById("appointmentResponse").innerHTML = `Error: ${error.message}`;
+            });
+        }
+
+        // Function to upload a file
+        function uploadFile() {
+            const appointmentId = document.getElementById("uploadAppointmentId").value;
+            const file = document.getElementById("fileInput").files[0];
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            fetch(`http://127.0.0.1:8000/api/upload-file/${appointmentId}/`, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById("fileUploadResponse").innerHTML = data.file_url 
+                    ? `File uploaded successfully! File URL: <a href="${data.file_url}" target="_blank">${data.file_url}</a>` 
+                    : `Error: ${data.error}`;
+            })
+            .catch(error => {
+                document.getElementById("fileUploadResponse").innerHTML = `Error: ${error.message}`;
+            });
+        }
+
+        // Function to download a file
+        function downloadFile() {
+            const appointmentId = document.getElementById("downloadAppointmentId").value;
+
+            fetch(`http://127.0.0.1:8000/api/download-file/${appointmentId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.file_url) {
+                    window.location.href = data.file_url;
+                } else {
+                    document.getElementById("fileDownloadResponse").innerHTML = `Error: ${data.error}`;
+                }
+            })
+            .catch(error => {
+                document.getElementById("fileDownloadResponse").innerHTML = `Error: ${error.message}`;
+            });
+        }
+    </script>
+</head>
+<body>
+    <h1>Hospital Web App API Test</h1>
+    <h2>Book an appointment</h2>
+    <div class="form-container">
+        <form id="appointmentForm" onsubmit="event.preventDefault(); bookAppointment();">
+            <label for="patientId">Patient ID:</label>
+            <input type="text" id="patientId" required>
+            <label for="doctorId">Doctor ID:</label>
+            <input type="text" id="doctorId" required>
+            <label for="date">Date:</label>
+            <input type="date" id="date" required>
+            <label for="time">Time:</label>
+            <input type="time" id="time" required>
+            <label for="reason">Reason:</label>
+            <input type="text" id="reason">
+            <button type="submit">Book Appointment</button>
+        </form>
+
+        <form id="fileUploadForm" onsubmit="event.preventDefault(); uploadFile();">
+            <label for="uploadAppointmentId">Appointment ID:</label>
+            <input type="text" id="uploadAppointmentId" required>
+            <label for="fileInput">File:</label>
+            <input type="file" id="fileInput" required>
+            <button type="submit">Upload File</button>
+        </form>
+
+        <form id="fileDownloadForm" onsubmit="event.preventDefault(); downloadFile();">
+            <label for="downloadAppointmentId">Appointment ID:</label>
+            <input type="text" id="downloadAppointmentId" required>
+            <button type="submit">Download File</button>
+        </form>
+    </div>
+
+    <div id="appointmentResponse" class="response-container"></div>
+    <div id="fileUploadResponse" class="response-container"></div>
+    <div id="fileDownloadResponse" class="response-container"></div>
+</body>
+</html>
+
